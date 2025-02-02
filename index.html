@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Ingredients</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .ingredient-search {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .ingredient-search input {
+      width: 100%;
+      max-width: 500px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .ingredient-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 10px;
+      background-color: #fff;
+    }
+    .ingredient-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .ingredient-item:hover {
+      background-color: #f1f1f1;
+    }
+    .selected-ingredients {
+      margin-bottom: 20px;
+    }
+    .selected-ingredients h2 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+    .selected-ingredients ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .selected-ingredients li {
+      background-color: #28a745;
+      color: white;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+    }
+    .selected-ingredients li .remove {
+      margin-left: 10px;
+      cursor: pointer;
+      background-color: #dc3545;
+      padding: 2px 5px;
+      border-radius: 50%;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+    }
+    .find-recipe-btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .find-recipe-btn:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+    .find-recipe-btn:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .result h2 {
+      color: #333;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+    .recipe {
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #f9f9f9;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    .recipe img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .recipe h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .recipe p {
+      margin: 5px 0;
+      color: #555;
+    }
+    .recipe ul {
+      list-style: none;
+      padding: 0;
+    }
+    .recipe li {
+      background-color: #fff;
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Select Ingredients</h1>
+    <div class="ingredient-search">
+      <input type="text" id="ingredientSearch" placeholder="Search for ingredients...">
+    </div>
+    <div class="ingredient-list" id="ingredientList"></div>
+    <div class="selected-ingredients">
+      <h2>Selected Ingredients:</h2>
+      <ul id="selectedIngredientsList"></ul>
+    </div>
+    <button id="findRecipeBtn" class="find-recipe-btn" disabled>Find Recipe</button>
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    const ingredientSearch = document.getElementById('ingredientSearch');
+    const ingredientList = document.getElementById('ingredientList');
+    const selectedIngredientsList = document.getElementById('selectedIngredientsList');
+    const findRecipeBtn = document.getElementById('findRecipeBtn');
+    const resultDiv = document.getElementById('result');
+    let selectedIngredients = [];
+
+    // Fetch available ingredients from the backend
+    fetch('/ingredients/available')
+      .then(response => response.json())
+      .then(data => {
+        const ingredients = data.ingredients;
+        displayIngredients(ingredients);
+        ingredientSearch.addEventListener('input', () => filterIngredients(ingredients, ingredientSearch.value));
+      })
+      .catch(error => console.error('Error fetching ingredients:', error));
+
+    function displayIngredients(ingredients) {
+      ingredientList.innerHTML = '';
+      ingredients.forEach(ingredient => {
+        const div = document.createElement('div');
+        div.classList.add('ingredient-item');
+        div.textContent = ingredient;
+        div.addEventListener('click', () => addIngredient(ingredient));
+        ingredientList.appendChild(div);
+      });
+    }
+
+    function filterIngredients(ingredients, query) {
+      const filteredIngredients = ingredients.filter(ingredient => ingredient.toLowerCase().includes(query.toLowerCase()));
+      displayIngredients(filteredIngredients);
+    }
+
+    function addIngredient(ingredient) {
+      if (!selectedIngredients.includes(ingredient)) {
+        selectedIngredients.push(ingredient);
+        updateSelectedIngredients();
+      }
+    }
+
+    function removeIngredient(ingredient) {
+      selectedIngredients = selectedIngredients.filter(item => item !== ingredient);
+      updateSelectedIngredients();
+    }
+
+    function updateSelectedIngredients() {
+      selectedIngredientsList.innerHTML = '';
+      selectedIngredients.forEach(ingredient => {
+        const li = document.createElement('li');
+        li.textContent = ingredient;
+        const removeBtn = document.createElement('span');
+        removeBtn.textContent = 'x';
+        removeBtn.classList.add('remove');
+        removeBtn.addEventListener('click', () => removeIngredient(ingredient));
+        li.appendChild(removeBtn);
+        selectedIngredientsList.appendChild(li);
+      });
+      findRecipeBtn.disabled = selectedIngredients.length < 3;
+    }
+
+    // Submit the selected ingredients to the backend
+    findRecipeBtn.addEventListener('click', () => {
+      fetch('/ingredients/select', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ selectedIngredients }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.recipes) {
+          resultDiv.innerHTML = `<h2>Suggested Recipes:</h2>${data.recipes.map(recipe => `
+            <div class="recipe">
+              <img src="${recipe.imageUrl}" alt="${recipe.name}">
+              <h3>${recipe.name}</h3>
+              <p><strong>Preparation Time:</strong> ${recipe.preparationTime}</p>
+              <p><strong>Cooking Time:</strong> ${recipe.cookingTime}</p>
+              <p><strong>Dish Type:</strong> ${recipe.dishType}</p>
+              <p><strong>Cuisine:</strong> ${recipe.cuisine}</p>
+              <h4>Ingredients:</h4>
+              <ul>${recipe.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}</ul>
+              <h4>Steps:</h4>
+              <ul>${recipe.steps.map(step => `<li>${step}</li>`).join('')}</ul>
+            </div>
+          `).join('')}`;
+        } else {
+          resultDiv.innerHTML = '<h2>No recipes found with the selected ingredients.</h2>';
+        }
+      })
+      .catch(error => {
+        console.error('Error submitting ingredients:', error);
+        alert('Error submitting ingredients');
+      });
+    });
+  </script>
+</body>
+</html>
