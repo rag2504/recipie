@@ -1,0 +1,43 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Ingredients</title>
+</head>
+<body>
+  <form id="ingredientForm">
+    <label>Select Ingredients:</label><br>
+    <input type="checkbox" name="ingredients" value="WHEAT FLOUR"> WHEAT FLOUR<br>
+    <input type="checkbox" name="ingredients" value="YOGURT"> YOGURT<br>
+    <input type="checkbox" name="ingredients" value="BAKING POWDER"> BAKING POWDER<br>
+    <input type="checkbox" name="ingredients" value="SALT"> SALT<br>
+    <input type="checkbox" name="ingredients" value="WATER"> WATER<br>
+    <!-- Add more ingredients here -->
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    document.getElementById('ingredientForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const ingredients = Array.from(formData.getAll('ingredients'));
+
+      const response = await fetch('/submit-ingredients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ingredients })
+      });
+
+      const data = await response.json();
+      document.getElementById('result').innerText = `You can make: ${data.recipes.join(', ')}`;
+    });
+  </script>
+</body>
+</html>
